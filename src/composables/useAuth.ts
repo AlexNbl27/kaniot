@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
 const user = ref<User | null>(null)
@@ -43,7 +43,7 @@ export const useAuth = () => {
   checkUser()
 
   // Listen for auth changes
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange((_, session) => {
     user.value = session?.user ?? null
   })
 
