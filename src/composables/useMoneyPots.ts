@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
-import { supabase } from '../lib/supabase'
+import { supabase } from '@/lib/supabase'
 import { nanoid } from 'nanoid'
-import type { MoneyPot, Participant, CreatePotData, JoinPotData, PotSummary } from '../types'
+import type { MoneyPot, Participant, CreatePotData, JoinPotData, PotSummary } from '@/types'
 
 export const useMoneyPots = () => {
   const loading = ref(false)
