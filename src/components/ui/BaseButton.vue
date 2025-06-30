@@ -39,7 +39,7 @@ const buttonClasses = computed(() => {
   const variants = {
     primary: 'bg-primary-600 dark:bg-primary-700 text-white hover:bg-primary-700 dark:hover:bg-primary-600 focus:ring-primary-500 disabled:bg-gray-300',
     secondary: 'bg-secondary-600 dark:bg-secondary-700 text-white hover:bg-secondary-700 dark:hover:bg-secondary-600 focus:ring-secondary-500 disabled:bg-gray-300',
-    outline: 'border-2 border-primary-600 text-primary-600 dark:text-primary-400 hover:bg-primary-50 focus:ring-primary-500 disabled:border-gray-300 disabled:text-gray-400',
+    outline: 'border-2 border-primary-600 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900 focus:ring-primary-500 disabled:border-gray-300 disabled:text-gray-400',
     ghost: 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:ring-gray-500 disabled:text-gray-400',
   }
   
