@@ -19,17 +19,22 @@
       </div>
 
       <div v-else-if="potSummary" class="max-w-4xl mx-auto space-y-6">
-        <!-- Header -->
         <BaseCard>
           <div class="text-center">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ potSummary.pot.title }}</h1>
+            <div class="text-sm text-gray-600 mb-1">
+              Created by: {{ potSummary.pot.creator_name }}
+            </div>
             <div class="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-600">
               <span>Target: €{{ potSummary.pot.target_amount.toFixed(2) }}</span>
               <span>•</span>
-              <span>{{ potSummary.participant_count }} participant{{ potSummary.participant_count !== 1 ? 's' : '' }}</span>
+              <span>{{ potSummary.participant_count }} participant{{ potSummary.participant_count !== 1 ? 's' : ''
+              }}</span>
               <span v-if="potSummary.pot.expiration_date">•</span>
-              <span v-if="potSummary.pot.expiration_date" :class="potSummary.is_expired ? 'text-red-600' : 'text-green-600'">
-                {{ potSummary.is_expired ? 'Expired' : 'Active' }} until {{ formatDate(potSummary.pot.expiration_date) }}
+              <span v-if="potSummary.pot.expiration_date"
+                :class="potSummary.is_expired ? 'text-red-600' : 'text-green-600'">
+                {{ potSummary.is_expired ? 'Expired' : 'Active' }} until {{ formatDate(potSummary.pot.expiration_date)
+                }}
               </span>
             </div>
           </div>
@@ -44,14 +49,12 @@
                 €{{ totalContributions.toFixed(2) }} / €{{ potSummary.pot.target_amount.toFixed(2) }}
               </span>
             </div>
-            
+
             <div class="w-full bg-gray-200 rounded-full h-3">
-              <div 
-                class="bg-primary-600 h-3 rounded-full transition-all duration-500"
-                :style="{ width: `${Math.min(progressPercentage, 100)}%` }"
-              ></div>
+              <div class="bg-primary-600 h-3 rounded-full transition-all duration-500"
+                :style="{ width: `${Math.min(progressPercentage, 100)}%` }"></div>
             </div>
-            
+
             <div class="text-center text-sm text-gray-600">
               {{ progressPercentage.toFixed(1) }}% of target reached
               <span v-if="progressPercentage >= 100" class="text-green-600 font-semibold"> - Target achieved! 🎉</span>
@@ -64,37 +67,18 @@
           <template #header>
             <h3 class="text-lg font-semibold">Join this Money Pot</h3>
           </template>
-          
+
           <form @submit.prevent="handleJoin" class="space-y-4">
             <div class="grid sm:grid-cols-2 gap-4">
-              <BaseInput
-                id="name"
-                v-model="joinForm.name"
-                label="Your Name"
-                placeholder="Enter your name"
-                required
-                :error="joinErrors.name"
-              />
-              
-              <BaseInput
-                id="max_pledge"
-                v-model="joinForm.max_pledge"
-                type="number"
-                label="Maximum Pledge (€)"
-                placeholder="50"
-                min="0.01"
-                step="0.01"
-                required
-                :error="joinErrors.max_pledge"
-                hint="What's the most you can contribute?"
-              />
+              <BaseInput id="name" v-model="joinForm.name" label="Your Name" placeholder="Enter your name" required
+                :error="joinErrors.name" />
+
+              <BaseInput id="max_pledge" v-model="joinForm.max_pledge" type="number" label="Maximum Pledge (€)"
+                placeholder="50" :min="0.01" :step="0.01" required :error="joinErrors.max_pledge"
+                hint="What's the most you can contribute?" />
             </div>
-            
-            <BaseButton 
-              type="submit" 
-              :loading="joinLoading"
-              class="w-full sm:w-auto"
-            >
+
+            <BaseButton type="submit" :loading="joinLoading" class="w-full sm:w-auto">
               Join Money Pot
             </BaseButton>
           </form>
@@ -105,14 +89,27 @@
           <template #header>
             <h3 class="text-lg font-semibold">Participants & Distribution</h3>
           </template>
-          
+
           <div class="space-y-3">
-            <div v-for="participant in distributedParticipants" :key="participant.id" 
-                 class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p class="font-medium">{{ participant.name }}</p>
-                <p class="text-sm text-gray-600">Max pledge: €{{ participant.max_pledge.toFixed(2) }}</p>
+            <div v-for="participant in distributedParticipants" :key="participant.id"
+              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+
+              <div class="flex items-center gap-3">
+                <div>
+                  <p class="font-medium">{{ participant.name }}</p>
+                  <p class="text-sm text-gray-600">Max pledge: €{{ participant.max_pledge.toFixed(2) }}</p>
+                </div>
+
+                <button v-if="isOwner" @click="handleDeleteParticipant(participant.id)" title="Remove participant"
+                  class="text-gray-400 hover:text-red-600 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd"
+                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z"
+                      clip-rule="evenodd" />
+                  </svg>
+                </button>
               </div>
+
               <div class="text-right">
                 <p class="font-semibold text-primary-600">€{{ participant.calculated_contribution.toFixed(2) }}</p>
                 <p class="text-xs text-gray-500">contribution</p>
@@ -126,20 +123,13 @@
           <template #header>
             <h3 class="text-lg font-semibold">Share this Money Pot</h3>
           </template>
-          
+
           <div class="space-y-4">
             <p class="text-gray-600">Share this link to let others join:</p>
             <div class="flex items-center gap-2">
-              <input
-                :value="shareUrl"
-                readonly
-                class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm"
-              />
-              <BaseButton 
-                variant="outline" 
-                size="sm"
-                @click="copyToClipboard"
-              >
+              <input :value="shareUrl" readonly
+                class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm" />
+              <BaseButton variant="outline" size="sm" @click="copyToClipboard">
                 {{ copied ? 'Copied!' : 'Copy' }}
               </BaseButton>
             </div>
@@ -158,10 +148,12 @@ import { supabase } from '@/lib/supabase'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
-import type { PotSummary, Participant } from '@/types'
+import { useAuth } from '@/composables/useAuth'
+import type { PotSummary } from '@/types'
 
 const route = useRoute()
-const { getPotByShareCode, joinPot, calculateDistribution, loading, error } = useMoneyPots()
+const { getPotByShareCode, joinPot, deleteParticipant, calculateDistribution, loading, error } = useMoneyPots()
+const { user } = useAuth()
 
 const shareCode = computed(() => route.params.shareCode as string)
 const potSummary = ref<PotSummary | null>(null)
@@ -180,10 +172,41 @@ const joinErrors = reactive({
 
 const shareUrl = computed(() => window.location.href)
 
+watch(user, (currentUser) => {
+  if (currentUser && currentUser.user_metadata?.display_name) {
+    joinForm.name = currentUser.user_metadata.display_name
+  }
+}, {
+  immediate: true
+})
+
 const distributedParticipants = computed(() => {
   if (!potSummary.value) return []
   return calculateDistribution(potSummary.value.participants, potSummary.value.pot.target_amount)
 })
+
+const isOwner = computed(() => {
+  if (!user.value || !potSummary.value) {
+    return false
+  }
+  return user.value.id === potSummary.value.pot.created_by
+})
+
+const handleDeleteParticipant = async (participantId: string) => {
+  // C'est une bonne pratique de demander confirmation pour une action destructive
+  if (!confirm('Are you sure you want to remove this participant?')) {
+    return
+  }
+
+  try {
+    await deleteParticipant(participantId)
+    // Recharger les données du pot pour mettre à jour la liste des participants
+    await loadPot()
+  } catch (err) {
+    console.error('Failed to delete participant:', err)
+    // Optionnel : afficher une notification d'erreur à l'utilisateur
+  }
+}
 
 const totalContributions = computed(() => {
   return distributedParticipants.value.reduce((sum, p) => sum + p.calculated_contribution, 0)
@@ -233,11 +256,11 @@ const handleJoin = async () => {
       name: joinForm.name.trim(),
       max_pledge: Number(joinForm.max_pledge),
     })
-    
+
     // Reset form
     joinForm.name = ''
     joinForm.max_pledge = ''
-    
+
     // Reload pot data
     await loadPot()
   } catch (err) {
@@ -271,7 +294,7 @@ const formatDate = (dateString: string) => {
 
 onMounted(() => {
   loadPot()
-  
+
   // Subscribe to real-time updates
   const channel = supabase
     .channel('pot-updates')

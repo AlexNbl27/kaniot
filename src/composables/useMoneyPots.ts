@@ -10,13 +10,13 @@ export const useMoneyPots = () => {
   const createPot = async (data: CreatePotData): Promise<MoneyPot> => {
     loading.value = true
     error.value = null
-    
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Must be authenticated to create a pot')
 
       const shareCode = nanoid(8)
-      
+
       const { data: pot, error: createError } = await supabase
         .from('money_pots')
         .insert({
@@ -42,10 +42,10 @@ export const useMoneyPots = () => {
   const getPotByShareCode = async (shareCode: string): Promise<PotSummary> => {
     loading.value = true
     error.value = null
-    
+
     try {
       const { data: pot, error: potError } = await supabase
-        .from('money_pots')
+        .from('money_pots_with_creator_name')
         .select('*')
         .eq('share_code', shareCode)
         .single()
@@ -81,7 +81,7 @@ export const useMoneyPots = () => {
   const joinPot = async (potId: string, data: JoinPotData): Promise<Participant> => {
     loading.value = true
     error.value = null
-    
+
     try {
       const { data: participant, error: joinError } = await supabase
         .from('participants')
@@ -107,7 +107,7 @@ export const useMoneyPots = () => {
   const getUserPots = async (): Promise<MoneyPot[]> => {
     loading.value = true
     error.value = null
-    
+
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Must be authenticated')
@@ -128,11 +128,25 @@ export const useMoneyPots = () => {
     }
   }
 
+  const deleteParticipant = async (participantId: string) => {
+    try {
+      const { error } = await supabase
+        .from('participants')
+        .delete()
+        .eq('id', participantId)
+
+      if (error) throw error
+    } catch (err) {
+      // On propage l'erreur pour la gérer dans le composant
+      throw err
+    }
+  }
+
   const calculateDistribution = (participants: Participant[], targetAmount: number): Participant[] => {
     if (participants.length === 0) return []
 
     const totalMaxPledge = participants.reduce((sum, p) => sum + p.max_pledge, 0)
-    
+
     if (totalMaxPledge <= targetAmount) {
       // Everyone can pledge their maximum
       return participants.map(p => ({
@@ -155,6 +169,7 @@ export const useMoneyPots = () => {
     getPotByShareCode,
     joinPot,
     getUserPots,
+    deleteParticipant,
     calculateDistribution,
   }
 }

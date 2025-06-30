@@ -12,19 +12,25 @@ export const useAuth = () => {
       email,
       password,
     })
-    
+
     if (error) throw error
     user.value = data.user
     return data
   }
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, username: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          display_name: username,
+        }
+      }
     })
-    
+
     if (error) throw error
+    user.value = data.user
     return data
   }
 
@@ -39,10 +45,6 @@ export const useAuth = () => {
     user.value = currentUser
   }
 
-  // Initialize auth state
-  checkUser()
-
-  // Listen for auth changes
   supabase.auth.onAuthStateChange((_, session) => {
     user.value = session?.user ?? null
   })

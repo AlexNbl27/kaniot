@@ -24,8 +24,8 @@
               type="number"
               label="Target Amount (€)"
               placeholder="100"
-              min="1"
-              step="0.01"
+              :min="1"
+              :step="0.01"
               required
               :error="errors.target_amount"
               hint="The total amount you want to collect"

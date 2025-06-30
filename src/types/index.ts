@@ -6,6 +6,7 @@ export interface MoneyPot {
   created_at: string;
   updated_at: string;
   created_by: string;
+  creator_name: string;
   share_code: string;
 }
 
