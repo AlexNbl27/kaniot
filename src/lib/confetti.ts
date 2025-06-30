@@ -10,7 +10,6 @@ export function triggerConfetti() {
 }
 
 // Animation for large screens (Desktop)
-
 function triggerFireworksEffect() {
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
