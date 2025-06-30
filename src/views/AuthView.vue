@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center py-12 px-4">
+  <div class="min-h-[85vh] sm:min-h-[95vh] flex items-center justify-center px-4">
     <div class="max-w-md w-full">
       <div class="text-center mb-8">
         <h1 class="text-4xl font-bold">{{ isSignUp ? 'Créer un compte' : 'Connexion' }}</h1>

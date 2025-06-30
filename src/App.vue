@@ -7,7 +7,7 @@
         <div class="flex justify-between items-center h-16">
           <router-link to="/" class="flex items-center gap-2 text-primary-600 hover:opacity-80 transition-opacity"
             @click="isMobileMenuOpen = false">
-            <img :src="logoSrc" alt="Kaniot Logo" class="h-8 w-auto" />
+            <img :src="logoSrc" alt="Kaniot Logo" class="h-6 w-auto" />
           </router-link>
 
           <nav class="hidden md:flex items-center gap-2">

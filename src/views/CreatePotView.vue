@@ -38,19 +38,19 @@
 
         <BaseCard v-if="createdPot" class="mt-6">
           <template #header>
-            <h3 class="text-lg font-semibold text-green-800">Money Pot Created! 🎉</h3>
+            <h3 class="text-lg font-semibold text-green-800 dark:text-green-400">Kaniot créée avec succès! 🎉</h3>
           </template>
 
           <div class="space-y-4">
-            <p class="text-gray-600">Votre cagnotte a été créée avec succès. Partagez ce lien avec les
+            <p class="text-gray-600 dark:text-gray-400">Votre cagnotte a été créée avec succès. Partagez ce lien avec les
               participants&nbsp;:
             </p>
 
             <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-              <p class="text-sm text-gray-600 mb-2">Lien partageable:</p>
+              <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">Lien partageable:</p>
               <div class="flex items-center gap-2">
                 <input :value="shareUrl" readonly
-                  class="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm" />
+                  class="flex-1 max-w-[50vw] px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 rounded-md text-sm" />
                 <BaseButton variant="outline" size="sm" @click="copyToClipboard">
                   {{ copied ? 'Copié!' : 'Copier' }}
                 </BaseButton>
