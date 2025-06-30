@@ -17,6 +17,7 @@ export interface Participant {
   max_pledge: number;
   calculated_contribution: number;
   joined_at: string;
+  user_id: string | null;
 }
 
 export interface PotSummary {

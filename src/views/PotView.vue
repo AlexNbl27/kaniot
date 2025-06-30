@@ -29,7 +29,7 @@
               <span>Target: €{{ potSummary.pot.target_amount.toFixed(2) }}</span>
               <span>•</span>
               <span>{{ potSummary.participant_count }} participant{{ potSummary.participant_count !== 1 ? 's' : ''
-              }}</span>
+                }}</span>
               <span v-if="potSummary.pot.expiration_date">•</span>
               <span v-if="potSummary.pot.expiration_date"
                 :class="potSummary.is_expired ? 'text-red-600' : 'text-green-600'">
@@ -100,7 +100,7 @@
                   <p class="text-sm text-gray-600">Max pledge: €{{ participant.max_pledge.toFixed(2) }}</p>
                 </div>
 
-                <button v-if="isOwner" @click="handleDeleteParticipant(participant.id)" title="Remove participant"
+                <button v-if="canDeleteParticipant(participant)" @click="handleDeleteParticipant(participant.id)" title="Remove participant"
                   class="text-gray-400 hover:text-red-600 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd"
@@ -141,7 +141,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { triggerConfetti } from '@/lib/confetti'
 import { useRoute } from 'vue-router'
 import { useMoneyPots } from '@/composables/useMoneyPots'
 import { supabase } from '@/lib/supabase'
@@ -149,7 +150,8 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import { useAuth } from '@/composables/useAuth'
-import type { PotSummary } from '@/types'
+import type { PotSummary, Participant } from '@/types'
+import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 const route = useRoute()
 const { getPotByShareCode, joinPot, deleteParticipant, calculateDistribution, loading, error } = useMoneyPots()
@@ -159,6 +161,9 @@ const shareCode = computed(() => route.params.shareCode as string)
 const potSummary = ref<PotSummary | null>(null)
 const joinLoading = ref(false)
 const copied = ref(false)
+const potChannel = ref<RealtimeChannel | null>(null)
+
+const animatedTotalContributions = ref(0)
 
 const joinForm = reactive({
   name: '',
@@ -173,77 +178,122 @@ const joinErrors = reactive({
 const shareUrl = computed(() => window.location.href)
 
 watch(user, (currentUser) => {
-  if (currentUser && currentUser.user_metadata?.display_name) {
+  if (currentUser && !joinForm.name && currentUser.user_metadata?.display_name) {
     joinForm.name = currentUser.user_metadata.display_name
   }
-}, {
-  immediate: true
-})
+}, { immediate: true })
 
 const distributedParticipants = computed(() => {
   if (!potSummary.value) return []
   return calculateDistribution(potSummary.value.participants, potSummary.value.pot.target_amount)
 })
 
-const isOwner = computed(() => {
-  if (!user.value || !potSummary.value) {
-    return false
-  }
-  return user.value.id === potSummary.value.pot.created_by
-})
-
-const handleDeleteParticipant = async (participantId: string) => {
-  // C'est une bonne pratique de demander confirmation pour une action destructive
-  if (!confirm('Are you sure you want to remove this participant?')) {
-    return
-  }
-
-  try {
-    await deleteParticipant(participantId)
-    // Recharger les données du pot pour mettre à jour la liste des participants
-    await loadPot()
-  } catch (err) {
-    console.error('Failed to delete participant:', err)
-    // Optionnel : afficher une notification d'erreur à l'utilisateur
-  }
-}
-
 const totalContributions = computed(() => {
   return distributedParticipants.value.reduce((sum, p) => sum + p.calculated_contribution, 0)
 })
 
+watch(totalContributions, (newValue, oldValue) => {
+  if (!potSummary.value) return;
+  const targetAmount = potSummary.value.pot.target_amount;
+  if (oldValue < targetAmount && newValue >= targetAmount) {
+    console.log('Target reached! 🎉 Triggering confetti...');
+    triggerConfetti();
+  }
+});
+
+watch(totalContributions, (newValue, oldValue) => {
+  const duration = 500
+  const startValue = oldValue || 0
+  let startTime: number | null = null
+
+  const animate = (currentTime: number) => {
+    if (!startTime) startTime = currentTime
+    const elapsedTime = currentTime - startTime
+    const progress = Math.min(elapsedTime / duration, 1)
+
+    animatedTotalContributions.value = startValue + (newValue - startValue) * progress
+
+    if (progress < 1) {
+      requestAnimationFrame(animate)
+    } else {
+      animatedTotalContributions.value = newValue // Assurer la valeur finale exacte
+    }
+  }
+  requestAnimationFrame(animate)
+})
+
 const progressPercentage = computed(() => {
-  if (!potSummary.value) return 0
+  if (!potSummary.value || potSummary.value.pot.target_amount === 0) return 0
   return (totalContributions.value / potSummary.value.pot.target_amount) * 100
 })
+
+const isOwner = computed(() => {
+  if (!user.value || !potSummary.value) return false
+  return user.value.id === potSummary.value.pot.created_by
+})
+
+const handleRealtimeUpdate = (payload: RealtimePostgresChangesPayload<Participant>) => {
+  if (!potSummary.value) return
+  console.info('Realtime update received:', payload)
+  switch (payload.eventType) {
+    case 'INSERT':
+      potSummary.value.participants.push(payload.new as Participant)
+      break;
+    case 'UPDATE':
+      const indexToUpdate = potSummary.value.participants.findIndex(p => p.id === payload.new.id)
+      if (indexToUpdate !== -1) {
+        potSummary.value.participants[indexToUpdate] = payload.new as Participant
+      }
+      break;
+    case 'DELETE':
+      potSummary.value.participants = potSummary.value.participants.filter(p => p.id !== (payload.old as Participant).id)
+      break;
+  }
+  potSummary.value.participant_count = potSummary.value.participants.length
+}
 
 const loadPot = async () => {
   try {
     const summary = await getPotByShareCode(shareCode.value)
     potSummary.value = summary
+    animatedTotalContributions.value = totalContributions.value
+    await nextTick();
+    if (potSummary.value && totalContributions.value >= potSummary.value.pot.target_amount) {
+      console.log('Target already met on page load. Triggering confetti...');
+      triggerConfetti();
+    }
+
+    if (summary?.pot && !potChannel.value) {
+      potChannel.value = supabase
+        .channel(`pot-updates-${summary.pot.id}`)
+        .on<Participant>(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'participants',
+            filter: `pot_id=eq.${summary.pot.id}`,
+          },
+          handleRealtimeUpdate
+        )
+        .subscribe()
+    }
   } catch (err) {
-    console.error('Failed to load pot:', err)
+    console.error('Failed to load pot initially:', err)
   }
 }
 
 const validateJoinForm = () => {
-  // Reset errors
-  Object.keys(joinErrors).forEach(key => {
-    joinErrors[key as keyof typeof joinErrors] = ''
-  })
-
+  Object.keys(joinErrors).forEach(key => { joinErrors[key as keyof typeof joinErrors] = '' })
   let isValid = true
-
   if (!joinForm.name.trim()) {
     joinErrors.name = 'Name is required'
     isValid = false
   }
-
   if (!joinForm.max_pledge || Number(joinForm.max_pledge) <= 0) {
     joinErrors.max_pledge = 'Pledge amount must be greater than 0'
     isValid = false
   }
-
   return isValid
 }
 
@@ -256,13 +306,7 @@ const handleJoin = async () => {
       name: joinForm.name.trim(),
       max_pledge: Number(joinForm.max_pledge),
     })
-
-    // Reset form
-    joinForm.name = ''
     joinForm.max_pledge = ''
-
-    // Reload pot data
-    await loadPot()
   } catch (err) {
     console.error('Failed to join pot:', err)
   } finally {
@@ -270,55 +314,63 @@ const handleJoin = async () => {
   }
 }
 
+
+const canDeleteParticipant = (participant: Participant) => {
+  if (isOwner.value) {
+    return true;
+  }
+  if (user.value && user.value.id === participant.user_id) {
+    return true;
+  }
+  return false;
+};
+
+const handleDeleteParticipant = async (participantId: string) => {
+  if (!confirm('Are you sure you want to remove this participant?')) return
+  try {
+    await deleteParticipant(participantId)
+  } catch (err) {
+    console.error('Failed to delete participant:', err)
+  }
+}
+
 const copyToClipboard = async () => {
   try {
     await navigator.clipboard.writeText(shareUrl.value)
     copied.value = true
-    setTimeout(() => {
-      copied.value = false
-    }, 2000)
+    setTimeout(() => { copied.value = false }, 2000)
   } catch (err) {
     console.error('Failed to copy to clipboard:', err)
   }
 }
 
 const formatDate = (dateString: string) => {
+  if (!dateString) return ''
   return new Date(dateString).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }
 
 onMounted(() => {
-  loadPot()
-
-  // Subscribe to real-time updates
-  const channel = supabase
-    .channel('pot-updates')
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'participants',
-        filter: `pot_id=eq.${potSummary.value?.pot.id}`,
-      },
-      () => {
-        loadPot()
-      }
-    )
-    .subscribe()
-
-  return () => {
-    supabase.removeChannel(channel)
+  if (shareCode.value) {
+    loadPot()
   }
 })
 
-watch(shareCode, () => {
-  if (shareCode.value) {
+onUnmounted(() => {
+  if (potChannel.value) {
+    potChannel.value.unsubscribe()
+
+    potChannel.value = null
+  }
+})
+
+watch(shareCode, (newShareCode) => {
+  if (newShareCode) {
+    if (potChannel.value) {
+      potChannel.value.unsubscribe()
+      potChannel.value = null
+    }
     loadPot()
   }
 })

@@ -3,7 +3,7 @@
     <div class="container mx-auto px-4 py-16">
       <div class="text-center mb-16">
         <h1 class="text-5xl font-bold text-gray-900 mb-6">
-          Money Pot Manager
+          Kaniot
         </h1>
         <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
           Create shared money pots for group expenses, events, and collective funding. 
