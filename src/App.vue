@@ -5,7 +5,7 @@
       <div class="container mx-auto px-4">
         <div class="flex justify-between items-center h-16">
           <router-link to="/" class="text-xl font-bold text-primary-600">
-            💰 Money Pot Manager
+            💰 Kaniot
           </router-link>
           
           <div class="flex items-center gap-4">
@@ -48,7 +48,7 @@
     <footer class="bg-gray-900 text-white py-12">
       <div class="container mx-auto px-4 text-center">
         <p class="text-gray-400">
-          © 2025 Money Pot Manager. Fair distribution for collective funding.
+          © 2025 Kaniot. Fair distribution for collective funding.
         </p>
       </div>
     </footer>

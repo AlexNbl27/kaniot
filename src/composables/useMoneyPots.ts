@@ -83,13 +83,16 @@ export const useMoneyPots = () => {
     error.value = null
 
     try {
+      // On récupère l'utilisateur actuel
+      const { data: { user } } = await supabase.auth.getUser()
+
       const { data: participant, error: joinError } = await supabase
         .from('participants')
         .insert({
           pot_id: potId,
           name: data.name,
           max_pledge: data.max_pledge,
-          calculated_contribution: 0, // Will be updated by trigger
+          user_id: user ? user.id : null,
         })
         .select()
         .single()
@@ -130,6 +133,7 @@ export const useMoneyPots = () => {
 
   const deleteParticipant = async (participantId: string) => {
     try {
+      console.info('Deleting participant with ID:', participantId)
       const { error } = await supabase
         .from('participants')
         .delete()
@@ -137,30 +141,51 @@ export const useMoneyPots = () => {
 
       if (error) throw error
     } catch (err) {
-      // On propage l'erreur pour la gérer dans le composant
+      console.error('Error deleting participant:', err)
       throw err
     }
   }
 
   const calculateDistribution = (participants: Participant[], targetAmount: number): Participant[] => {
-    if (participants.length === 0) return []
-
-    const totalMaxPledge = participants.reduce((sum, p) => sum + p.max_pledge, 0)
-
-    if (totalMaxPledge <= targetAmount) {
-      // Everyone can pledge their maximum
-      return participants.map(p => ({
-        ...p,
-        calculated_contribution: p.max_pledge
-      }))
-    } else {
-      // Need to scale down proportionally
-      return participants.map(p => ({
-        ...p,
-        calculated_contribution: Math.round((p.max_pledge / totalMaxPledge) * targetAmount)
-      }))
+    // Base case: no participants or no target
+    if (participants.length === 0 || targetAmount <= 0) {
+      return participants.map(p => ({ ...p, calculated_contribution: 0 }));
     }
-  }
+
+    // If total pledges don't reach target, everyone gives their max
+    const totalMaxPledge = participants.reduce((sum, p) => sum + p.max_pledge, 0);
+    if (totalMaxPledge <= targetAmount) {
+      return participants.map(p => ({ ...p, calculated_contribution: p.max_pledge }));
+    }
+
+    // Iterative fair share algorithm
+    const sorted = [...participants].sort((a, b) => a.max_pledge - b.max_pledge);
+    const contributions: { [id: string]: number } = {};
+    let remaining = targetAmount;
+
+    for (let i = 0; i < sorted.length; i++) {
+      const left = sorted.length - i;
+      const p = sorted[i];
+      const share = remaining / left;
+
+      if (p.max_pledge <= share) {
+        contributions[p.id] = p.max_pledge;
+        remaining -= p.max_pledge;
+      } else {
+        const finalShare = remaining / left;
+        for (let j = i; j < sorted.length; j++) {
+          contributions[sorted[j].id] = finalShare;
+        }
+        break;
+      }
+    }
+
+    // Attach calculated contributions, rounded to cents
+    return participants.map(p => ({
+      ...p,
+      calculated_contribution: Math.round((contributions[p.id] || 0) * 100) / 100
+    }));
+  };
 
   return {
     loading: computed(() => loading.value),
