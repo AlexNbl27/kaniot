@@ -9,7 +9,8 @@ export function triggerConfetti() {
     }
 }
 
-// Animation pour les grands écrans (Desktop)
+// Animation for large screens (Desktop)
+
 function triggerFireworksEffect() {
     const duration = 3 * 1000;
     const animationEnd = Date.now() + duration;
@@ -33,7 +34,7 @@ function triggerFireworksEffect() {
     }, 250);
 }
 
-// Animation pour les petits écrans (Mobile)
+// Animation for small screens (Mobile)
 function triggerFountainEffect() {
     const duration = 2 * 1000;
     const animationEnd = Date.now() + duration;
