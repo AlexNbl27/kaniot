@@ -10,46 +10,28 @@
 
       <BaseCard>
         <form @submit.prevent="handleSubmit" class="space-y-6">
-          <BaseInput
-            id="email"
-            v-model="form.email"
-            type="email"
-            label="Email"
-            placeholder="Enter your email"
-            required
-            :error="errors.email"
-          />
+          <BaseInput v-if="isSignUp" id="username" v-model="form.username" type="text" label="Username"
+            placeholder="Choose a username" required :error="errors.username" />
 
-          <BaseInput
-            id="password"
-            v-model="form.password"
-            type="password"
-            label="Password"
-            placeholder="Enter your password"
-            required
-            :error="errors.password"
-            :hint="isSignUp ? 'Password must be at least 6 characters' : ''"
-          />
+          <BaseInput id="email" v-model="form.email" type="email" label="Email" placeholder="Enter your email" required
+            :error="errors.email" />
+
+          <BaseInput id="password" v-model="form.password" type="password" label="Password"
+            placeholder="Enter your password" required :error="errors.password"
+            :hint="isSignUp ? 'Password must be at least 6 characters' : ''" />
 
           <div v-if="authError" class="p-3 bg-red-50 border border-red-200 rounded-md">
             <p class="text-sm text-red-600">{{ authError }}</p>
           </div>
 
-          <BaseButton
-            type="submit"
-            :loading="loading"
-            class="w-full"
-          >
+          <BaseButton type="submit" :loading="loading" class="w-full">
             {{ isSignUp ? 'Create Account' : 'Sign In' }}
           </BaseButton>
         </form>
 
         <div class="mt-6 text-center">
-          <button
-            type="button"
-            @click="isSignUp = !isSignUp"
-            class="text-primary-600 hover:text-primary-700 text-sm font-medium"
-          >
+          <button type="button" @click="isSignUp = !isSignUp"
+            class="text-primary-600 hover:text-primary-700 text-sm font-medium">
             {{ isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up" }}
           </button>
         </div>
@@ -82,11 +64,13 @@ const authError = ref('')
 const form = reactive({
   email: '',
   password: '',
+  username: '',
 })
 
 const errors = reactive({
   email: '',
   password: '',
+  username: '',
 })
 
 const validateForm = () => {
@@ -96,6 +80,13 @@ const validateForm = () => {
   })
 
   let isValid = true
+
+  if (isSignUp.value) {
+    if (!form.username) {
+      errors.username = 'Username is required'
+      isValid = false
+    }
+  }
 
   if (!form.email.trim()) {
     errors.email = 'Email is required'
@@ -124,8 +115,8 @@ const handleSubmit = async () => {
 
   try {
     if (isSignUp.value) {
-      await signUp(form.email, form.password)
-      authError.value = 'Check your email for a confirmation link!'
+      await signUp(form.email, form.password, form.username)
+      router.push('/dashboard')
     } else {
       await signIn(form.email, form.password)
       router.push('/dashboard')
