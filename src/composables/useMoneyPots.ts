@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { nanoid } from 'nanoid'
 import type { MoneyPot, Participant, CreatePotData, JoinPotData, PotSummary } from '@/types'
+import bcrypt from 'bcryptjs'
 
 export const useMoneyPots = () => {
   const loading = ref(false)
@@ -15,17 +16,22 @@ export const useMoneyPots = () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Must be authenticated to create a pot')
 
-      const shareCode = nanoid(8)
+      const potDataToInsert: any = {
+        title: data.title,
+        target_amount: data.target_amount,
+        expiration_date: data.expiration_date,
+        created_by: user.id,
+        share_code: nanoid(8).toUpperCase(),
+      };
+
+      if (data.password) {
+        const hashedPassword = await bcrypt.hash(data.password, 10);
+        potDataToInsert.password = hashedPassword;
+      }
 
       const { data: pot, error: createError } = await supabase
         .from('money_pots')
-        .insert({
-          title: data.title,
-          target_amount: data.target_amount,
-          expiration_date: data.expiration_date,
-          created_by: user.id,
-          share_code: shareCode,
-        })
+        .insert(potDataToInsert)
         .select()
         .single()
 
@@ -39,7 +45,13 @@ export const useMoneyPots = () => {
     }
   }
 
-  const getPotByShareCode = async (shareCode: string): Promise<PotSummary> => {
+  const checkProtection = async (shareCode: string) => {
+    const { data, error } = await supabase.rpc('is_pot_protected', { p_share_code: shareCode });
+    if (error) throw error;
+    return data;
+  };
+
+  const getPotByShareCode = async (shareCode: string, password?: string): Promise<PotSummary> => {
     loading.value = true
     error.value = null
 
@@ -52,6 +64,31 @@ export const useMoneyPots = () => {
 
       if (potError) throw potError
 
+      if (pot.password) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        let isOwner = false;
+        let isParticipant = false;
+        if (currentUser) {
+          isOwner = currentUser.id === pot.created_by;
+          if (!isOwner) {
+            const { data: participation } = await supabase
+              .from('participants')
+              .select('id')
+              .eq('pot_id', pot.id)
+              .eq('user_id', currentUser.id)
+              .maybeSingle();
+            isParticipant = !!participation;
+          }
+        }
+        if (!isOwner && !isParticipant) {
+          const isPasswordCorrect = await bcrypt.compare(password || '', pot.password);
+          if (!isPasswordCorrect) {
+            throw new Error("Mot de passe incorrect.");
+          }
+        }
+      }
+      delete pot.password;
+
       const { data: participants, error: participantsError } = await supabase
         .from('participants')
         .select('*')
@@ -59,7 +96,6 @@ export const useMoneyPots = () => {
         .order('joined_at', { ascending: true })
 
       if (participantsError) throw participantsError
-
       const totalPledged = participants.reduce((sum, p) => sum + p.max_pledge, 0)
       const isExpired = pot.expiration_date ? new Date(pot.expiration_date) < new Date() : false
 
@@ -83,9 +119,7 @@ export const useMoneyPots = () => {
     error.value = null
 
     try {
-      // On récupère l'utilisateur actuel
       const { data: { user } } = await supabase.auth.getUser()
-
       const { data: participant, error: joinError } = await supabase
         .from('participants')
         .insert({
@@ -110,7 +144,6 @@ export const useMoneyPots = () => {
   const getUserPots = async (): Promise<MoneyPot[]> => {
     loading.value = true
     error.value = null
-
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Must be authenticated')
@@ -143,6 +176,18 @@ export const useMoneyPots = () => {
     } catch (err) {
       console.error('Error deleting participant:', err)
       throw err
+    }
+  }
+
+  const deleteMoneyPot = async (potId: string) => {
+    const { error: dbError } = await supabase
+      .from('money_pots')
+      .delete()
+      .eq('id', potId)
+
+    if (dbError) {
+      console.error('Error deleting pot:', dbError)
+      throw new Error('La suppression de la cagnotte a échoué.')
     }
   }
 
@@ -195,6 +240,8 @@ export const useMoneyPots = () => {
     joinPot,
     getUserPots,
     deleteParticipant,
+    deleteMoneyPot,
     calculateDistribution,
+    checkProtection,
   }
 }

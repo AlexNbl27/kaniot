@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen py-8">
     <div class="container mx-auto px-4">
       <div v-if="loading" class="flex justify-center items-center min-h-64">
         <div class="animate-spin text-4xl">⟳</div>
@@ -10,7 +10,7 @@
           <div class="text-center py-8">
             <div class="text-4xl mb-4">❌</div>
             <h2 class="text-xl font-semibold text-red-600 mb-2">Error</h2>
-            <p class="text-gray-600">{{ error }}</p>
+            <p class="text-gray-600 dark:text-gray-400">{{ error }}</p>
             <BaseButton variant="outline" class="mt-4" @click="$router.push('/')">
               Go Home
             </BaseButton>
@@ -18,22 +18,41 @@
         </BaseCard>
       </div>
 
+      <div v-else-if="passwordPromptVisible" class="max-w-md mx-auto">
+        <BaseCard>
+          <template #header>
+            <h3 class="text-lg font-semibold">Cagnotte protégée</h3>
+          </template>
+          <form @submit.prevent="handlePasswordSubmit" class="space-y-4">
+            <p class="text-gray-600 dark:text-gray-400 text-sm">
+              Cette cagnotte est protégée par un mot de passe. Veuillez le saisir pour continuer.
+            </p>
+            <BaseInput id="password" v-model="enteredPassword" type="password" label="Mot de passe" required
+              :error="passwordError" />
+            <BaseButton type="submit" :loading="loading" class="w-full">
+              Accéder
+            </BaseButton>
+          </form>
+        </BaseCard>
+      </div>
+
       <div v-else-if="potSummary" class="max-w-4xl mx-auto space-y-6">
         <BaseCard>
           <div class="text-center">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ potSummary.pot.title }}</h1>
-            <div class="text-sm text-gray-600 mb-1">
-              Created by: {{ potSummary.pot.creator_name }}
+            <h1 class="text-3xl font-bold mb-2">{{ potSummary.pot.title }}</h1>
+            <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
+              Kaniot créée par {{ potSummary.pot.creator_name }}
             </div>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-gray-600">
-              <span>Target: €{{ potSummary.pot.target_amount.toFixed(2) }}</span>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <span>Objectif: €{{ potSummary.pot.target_amount.toFixed(2) }}</span>
               <span>•</span>
               <span>{{ potSummary.participant_count }} participant{{ potSummary.participant_count !== 1 ? 's' : ''
                 }}</span>
               <span v-if="potSummary.pot.expiration_date">•</span>
               <span v-if="potSummary.pot.expiration_date"
-                :class="potSummary.is_expired ? 'text-red-600' : 'text-green-600'">
-                {{ potSummary.is_expired ? 'Expired' : 'Active' }} until {{ formatDate(potSummary.pot.expiration_date)
+                :class="potSummary.is_expired ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
+                {{ potSummary.is_expired ? `Expirée depuis le ${formatDate(potSummary.pot.expiration_date)}` : `Active
+                jusqu'au ${formatDate(potSummary.pot.expiration_date)}`
                 }}
               </span>
             </div>
@@ -44,9 +63,9 @@
         <BaseCard>
           <div class="space-y-4">
             <div class="flex justify-between items-center">
-              <h3 class="text-lg font-semibold">Progress</h3>
+              <h3 class="text-lg font-semibold">Avancement</h3>
               <span class="text-lg font-bold text-primary-600">
-                €{{ totalContributions.toFixed(2) }} / €{{ potSummary.pot.target_amount.toFixed(2) }}
+                {{ totalContributions.toFixed(2) }}€ / {{ potSummary.pot.target_amount.toFixed(2) }}€
               </span>
             </div>
 
@@ -55,9 +74,10 @@
                 :style="{ width: `${Math.min(progressPercentage, 100)}%` }"></div>
             </div>
 
-            <div class="text-center text-sm text-gray-600">
-              {{ progressPercentage.toFixed(1) }}% of target reached
-              <span v-if="progressPercentage >= 100" class="text-green-600 font-semibold"> - Target achieved! 🎉</span>
+            <div class="text-center text-sm text-gray-600 dark:text-gray-400">
+              {{ progressPercentage.toFixed(1) }}% de l'objectif atteint
+              <span v-if="progressPercentage >= 100" class="text-green-600 font-semibold"> - Objectif atteint !
+                🎉</span>
             </div>
           </div>
         </BaseCard>
@@ -65,21 +85,20 @@
         <!-- Join Form (if not expired) -->
         <BaseCard v-if="!potSummary.is_expired">
           <template #header>
-            <h3 class="text-lg font-semibold">Join this Money Pot</h3>
+            <h3 class="text-lg font-semibold">Participer à cette Kaniot</h3>
           </template>
 
           <form @submit.prevent="handleJoin" class="space-y-4">
             <div class="grid sm:grid-cols-2 gap-4">
-              <BaseInput id="name" v-model="joinForm.name" label="Your Name" placeholder="Enter your name" required
-                :error="joinErrors.name" />
-
-              <BaseInput id="max_pledge" v-model="joinForm.max_pledge" type="number" label="Maximum Pledge (€)"
+              <BaseInput id="name" v-model="joinForm.name" label="Prénom" placeholder="Michel"
+                hint="Comment souhaitez-vous être appelé ?" required :error="joinErrors.name" />
+              <BaseInput id="max_pledge" v-model="joinForm.max_pledge" type="number" label="Contribution maximum (€)"
                 placeholder="50" :min="0.01" :step="0.01" required :error="joinErrors.max_pledge"
-                hint="What's the most you can contribute?" />
+                hint="Quel montant maximum êtes-vous prêt à contribuer ?" />
             </div>
 
             <BaseButton type="submit" :loading="joinLoading" class="w-full sm:w-auto">
-              Join Money Pot
+              Soumettre ma participation
             </BaseButton>
           </form>
         </BaseCard>
@@ -87,21 +106,21 @@
         <!-- Participants -->
         <BaseCard v-if="distributedParticipants.length > 0">
           <template #header>
-            <h3 class="text-lg font-semibold">Participants & Distribution</h3>
+            <h3 class="text-lg font-semibold">Participants & Répartition</h3>
           </template>
 
           <div class="space-y-3">
             <div v-for="participant in distributedParticipants" :key="participant.id"
-              class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
 
               <div class="flex items-center gap-3">
                 <div>
                   <p class="font-medium">{{ participant.name }}</p>
-                  <p class="text-sm text-gray-600">Max pledge: €{{ participant.max_pledge.toFixed(2) }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Max pledge: €{{ participant.max_pledge.toFixed(2) }}</p>
                 </div>
 
-                <button v-if="canDeleteParticipant(participant)" @click="handleDeleteParticipant(participant.id)" title="Remove participant"
-                  class="text-gray-400 hover:text-red-600 transition-colors">
+                <button v-if="canDeleteParticipant(participant)" @click="handleDeleteParticipant(participant.id)"
+                  title="Remove participant" class="text-gray-400 hover:text-red-600 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd"
                       d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z"
@@ -121,16 +140,18 @@
         <!-- Share -->
         <BaseCard>
           <template #header>
-            <h3 class="text-lg font-semibold">Share this Money Pot</h3>
+            <h3 class="text-lg font-semibold">Partager cette Kaniot</h3>
           </template>
 
           <div class="space-y-4">
-            <p class="text-gray-600">Share this link to let others join:</p>
+            <p class="text-gray-600 dark:text-gray-400">
+              Partagez ce lien avec vos amis et famille pour les inviter à participer à cette Kaniot :
+            </p>
             <div class="flex items-center gap-2">
               <input :value="shareUrl" readonly
-                class="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-sm" />
+                class="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 rounded-md text-sm" />
               <BaseButton variant="outline" size="sm" @click="copyToClipboard">
-                {{ copied ? 'Copied!' : 'Copy' }}
+                {{ copied ? 'Copié!' : 'Copier' }}
               </BaseButton>
             </div>
           </div>
@@ -154,11 +175,17 @@ import type { PotSummary, Participant } from '@/types'
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 const route = useRoute()
-const { getPotByShareCode, joinPot, deleteParticipant, calculateDistribution, loading, error } = useMoneyPots()
+const { getPotByShareCode, joinPot, deleteParticipant, calculateDistribution, checkProtection } = useMoneyPots()
 const { user } = useAuth()
+
+const loading = ref(true)
+const error = ref<string | null>(null)
 
 const shareCode = computed(() => route.params.shareCode as string)
 const potSummary = ref<PotSummary | null>(null)
+const passwordPromptVisible = ref(false)
+const enteredPassword = ref('')
+const passwordError = ref('')
 const joinLoading = ref(false)
 const copied = ref(false)
 const potChannel = ref<RealtimeChannel | null>(null)
@@ -196,7 +223,6 @@ watch(totalContributions, (newValue, oldValue) => {
   if (!potSummary.value) return;
   const targetAmount = potSummary.value.pot.target_amount;
   if (oldValue < targetAmount && newValue >= targetAmount) {
-    console.log('Target reached! 🎉 Triggering confetti...');
     triggerConfetti();
   }
 });
@@ -216,7 +242,7 @@ watch(totalContributions, (newValue, oldValue) => {
     if (progress < 1) {
       requestAnimationFrame(animate)
     } else {
-      animatedTotalContributions.value = newValue // Assurer la valeur finale exacte
+      animatedTotalContributions.value = newValue
     }
   }
   requestAnimationFrame(animate)
@@ -252,14 +278,16 @@ const handleRealtimeUpdate = (payload: RealtimePostgresChangesPayload<Participan
   potSummary.value.participant_count = potSummary.value.participants.length
 }
 
-const loadPot = async () => {
+const loadPot = async (password?: string) => {
+  loading.value = true
+  passwordError.value = ''
   try {
-    const summary = await getPotByShareCode(shareCode.value)
+    const summary = await getPotByShareCode(shareCode.value, password)
     potSummary.value = summary
+    passwordPromptVisible.value = false
     animatedTotalContributions.value = totalContributions.value
     await nextTick();
     if (potSummary.value && totalContributions.value >= potSummary.value.pot.target_amount) {
-      console.log('Target already met on page load. Triggering confetti...');
       triggerConfetti();
     }
 
@@ -278,8 +306,13 @@ const loadPot = async () => {
         )
         .subscribe()
     }
-  } catch (err) {
-    console.error('Failed to load pot initially:', err)
+  } catch (err: any) {
+    error.value = err.message
+    if (err.message.includes('incorrect')) {
+      passwordError.value = err.message
+    }
+  } finally {
+    loading.value = false
   }
 }
 
@@ -346,16 +379,35 @@ const copyToClipboard = async () => {
 
 const formatDate = (dateString: string) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleDateString('en-US', {
+  return new Date(dateString).toLocaleDateString('fr-FR', {
     year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 }
 
-onMounted(() => {
-  if (shareCode.value) {
-    loadPot()
+const handlePasswordSubmit = () => {
+  loadPot(enteredPassword.value)
+}
+
+onMounted(async () => {
+  if (!shareCode.value) {
+    loading.value = false;
+    error.value = "Aucun code de cagnotte n'a été fourni.";
+    return;
   }
-})
+
+  try {
+    const promptIsNeeded = await checkProtection(shareCode.value);
+    if (promptIsNeeded) {
+      passwordPromptVisible.value = true;
+      loading.value = false;
+    } else {
+      await loadPot();
+    }
+  } catch (err) {
+    error.value = "Impossible de vérifier les informations de la cagnotte.";
+    loading.value = false;
+  }
+});
 
 onUnmounted(() => {
   if (potChannel.value) {
