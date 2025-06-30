@@ -107,15 +107,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { useMoneyPots } from '@/composables/useMoneyPots'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseInput from '@/components/ui/BaseInput.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
 import type { MoneyPot } from '@/types'
 
-const router = useRouter()
-const { createPot, loading, error } = useMoneyPots()
+const { createPot, loading } = useMoneyPots()
 
 const form = reactive({
   title: '',

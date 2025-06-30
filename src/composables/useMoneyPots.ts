@@ -15,8 +15,7 @@ export const useMoneyPots = () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Must be authenticated to create a pot')
 
-      const shareCode = nanoid(8)
-
+      const shareCode = nanoid(8).toUpperCase()
       const { data: pot, error: createError } = await supabase
         .from('money_pots')
         .insert({
