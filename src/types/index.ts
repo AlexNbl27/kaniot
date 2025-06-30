@@ -32,6 +32,7 @@ export interface CreatePotData {
   title: string;
   target_amount: number;
   expiration_date?: string;
+  password?: string;
 }
 
 export interface JoinPotData {
