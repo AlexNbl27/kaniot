@@ -45,6 +45,27 @@ export const useMoneyPots = () => {
     }
   }
 
+  const updatePot = async (potId: string, updateData: Partial<{ title: string; target_amount: number; expiration_date: string }>): Promise<MoneyPot> => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const { data: updatedPot, error: updateError } = await supabase
+        .from('money_pots')
+        .update(updateData)
+        .eq('id', potId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      return updatedPot;
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to update pot';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const checkProtection = async (shareCode: string) => {
     const { data, error } = await supabase.rpc('is_pot_protected', { p_share_code: shareCode });
     if (error) throw error;
@@ -236,6 +257,7 @@ export const useMoneyPots = () => {
     loading: computed(() => loading.value),
     error: computed(() => error.value),
     createPot,
+    updatePot,
     getPotByShareCode,
     joinPot,
     getUserPots,

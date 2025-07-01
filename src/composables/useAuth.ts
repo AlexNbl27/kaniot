@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
-import type { User } from '@supabase/supabase-js'
+import type { User, UserAttributes } from '@supabase/supabase-js'
 
 const user = ref<User | null>(null)
 
@@ -45,6 +45,21 @@ export const useAuth = () => {
     user.value = currentUser
   }
 
+  const updateUser = async (attributes: UserAttributes) => {
+    const { data, error } = await supabase.auth.updateUser(attributes);
+    if (error) throw error;
+    user.value = data.user;
+    return data.user;
+  }
+
+  const deleteUserAccount = async () => {
+    console.info('Deleting user account... This action is irreversible.')
+    const { error } = await supabase.rpc('delete_user_account');
+    if (error) throw error;
+    user.value = null;
+  }
+
+
   supabase.auth.onAuthStateChange((_, session) => {
     user.value = session?.user ?? null
   })
@@ -56,5 +71,7 @@ export const useAuth = () => {
     signUp,
     signOut,
     checkUser,
+    updateUser,
+    deleteUserAccount,
   }
 }

@@ -43,11 +43,12 @@
             <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
               Kaniot créée par {{ potSummary.pot.creator_name }}
             </div>
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <div
+              class="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
               <span>Objectif: €{{ potSummary.pot.target_amount.toFixed(2) }}</span>
               <span>•</span>
               <span>{{ potSummary.participant_count }} participant{{ potSummary.participant_count !== 1 ? 's' : ''
-                }}</span>
+              }}</span>
               <span v-if="potSummary.pot.expiration_date">•</span>
               <span v-if="potSummary.pot.expiration_date"
                 :class="potSummary.is_expired ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
@@ -57,6 +58,33 @@
               </span>
             </div>
           </div>
+        </BaseCard>
+
+        <!-- Admin -->
+        <BaseCard v-if="isOwner && !potSummary.is_expired">
+          <template #header>
+            <h3 class="text-lg font-semibold">⚙️ Administration</h3>
+          </template>
+
+          <form @submit.prevent="handleUpdatePot" class="space-y-6">
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              Modifiez les informations de votre cagnotte ici.
+            </p>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <BaseInput id="admin-title" v-model="adminForm.title" label="Nom de la Kaniot" required />
+              <BaseInput id="admin-target" v-model="adminForm.target_amount" type="number" label="Montant cible (€)"
+                :min="1" required />
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4">
+              <BaseButton type="submit" :loading="adminLoading">
+                Enregistrer les modifications
+              </BaseButton>
+              <BaseButton variant="outline" type="button" @click="handleEndPot" :loading="adminLoading"
+                class="border-red-500 text-red-500 dark:text-red-400 dark:border-red-400 hover:bg-red-50">
+                Mettre un terme à la cagnotte
+              </BaseButton>
+            </div>
+          </form>
         </BaseCard>
 
         <!-- Progress -->
@@ -116,7 +144,8 @@
               <div class="flex items-center gap-3">
                 <div>
                   <p class="font-medium">{{ participant.name }}</p>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Max pledge: €{{ participant.max_pledge.toFixed(2) }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Max pledge: €{{ participant.max_pledge.toFixed(2)
+                    }}</p>
                 </div>
 
                 <button v-if="canDeleteParticipant(participant)" @click="handleDeleteParticipant(participant.id)"
@@ -175,7 +204,7 @@ import type { PotSummary, Participant } from '@/types'
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 const route = useRoute()
-const { getPotByShareCode, joinPot, deleteParticipant, calculateDistribution, checkProtection } = useMoneyPots()
+const { getPotByShareCode, joinPot, deleteParticipant, calculateDistribution, checkProtection, updatePot } = useMoneyPots()
 const { user } = useAuth()
 
 const loading = ref(true)
@@ -201,6 +230,66 @@ const joinErrors = reactive({
   name: '',
   max_pledge: '',
 })
+
+const adminLoading = ref(false)
+const adminForm = reactive({
+  title: '',
+  target_amount: 0,
+})
+
+// 3. Observez les changements de potSummary pour initialiser le formulaire d'admin
+watch(potSummary, (summary) => {
+  if (summary) {
+    adminForm.title = summary.pot.title
+    adminForm.target_amount = summary.pot.target_amount
+  }
+}, { immediate: true })
+
+// ...
+
+// 4. Ajoutez ces nouvelles fonctions de gestion
+const handleUpdatePot = async () => {
+  if (!potSummary.value) return;
+  adminLoading.value = true;
+  try {
+    const updatedPot = await updatePot(potSummary.value.pot.id, {
+      title: adminForm.title,
+      target_amount: Number(adminForm.target_amount),
+    });
+    // Mettre à jour l'interface sans recharger la page
+    potSummary.value.pot = updatedPot;
+    alert('Cagnotte mise à jour avec succès !');
+  } catch (err) {
+    console.error('Failed to update pot:', err);
+    alert('Une erreur est survenue lors de la mise à jour.');
+  } finally {
+    adminLoading.value = false;
+  }
+}
+
+const handleEndPot = async () => {
+  if (!potSummary.value) return;
+  if (!confirm(`Êtes-vous sûr de vouloir mettre un terme à la cagnotte "${potSummary.value.pot.title}" ? Cette action est irréversible.`)) {
+    return;
+  }
+
+  adminLoading.value = true;
+  try {
+    const expirationDate = new Date().toISOString();
+    const updatedPot = await updatePot(potSummary.value.pot.id, {
+      expiration_date: expirationDate,
+    });
+    // Mettre à jour l'interface
+    potSummary.value.pot = updatedPot;
+    potSummary.value.is_expired = true;
+    alert('La cagnotte a été terminée.');
+  } catch (err) {
+    console.error('Failed to end pot:', err);
+    alert('Une erreur est survenue.');
+  } finally {
+    adminLoading.value = false;
+  }
+}
 
 const shareUrl = computed(() => window.location.href)
 
