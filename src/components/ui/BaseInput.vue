@@ -51,12 +51,12 @@ defineEmits<{
 }>()
 
 const inputClasses = computed(() => {
-  const base = 'w-full px-3 py-2 border rounded-lg shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 dark:bg-gray-700 dark:text-gray-200'
+  const base = 'w-full px-3 py-2 border rounded-lg shadow-sm transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 bg-gray-50 dark:bg-gray-700 dark:text-gray-200'
   
   if (props.error) {
     return `${base} border-red-300 focus:border-red-500 focus:ring-red-500`
   } else {
-    return `${base} border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-50 dark:bg-gray-700 disabled:text-gray-500`
+    return `${base} border-gray-300 focus:border-primary-500 focus:ring-primary-500 disabled:bg-gray-100 dark:bg-gray-700 disabled:text-gray-500`
   }
 })
 </script>
