@@ -11,10 +11,10 @@
           simplicité.
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <BaseButton variant="primary" size="lg" @click="$router.push('/create')">
+          <BaseButton variant="primary" size="lg" to="/create">
             Créer une Kaniot
           </BaseButton>
-          <BaseButton variant="outline" size="lg" @click="$router.push('/dashboard')">
+          <BaseButton variant="outline" size="lg" to="/dashboard">
             Tableau de bord
           </BaseButton>
         </div>
