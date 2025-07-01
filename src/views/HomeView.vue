@@ -36,7 +36,7 @@
                   class="w-10 h-12 border-2 rounded-md flex items-center justify-center text-xl font-bold transition-all duration-200"
                   :class="{
                     'border-red-500 dark:border-red-400': !!error,
-                    'border-black dark: border-white': isFocused && !error,
+                    'border-black dark:border-white': isFocused && !error,
                     'border-gray-300 dark:border-gray-600': !isFocused && !error,
                     'text-red-600 dark:text-red-400': !!error,
                     'text-gray-900 dark:text-white': !error
