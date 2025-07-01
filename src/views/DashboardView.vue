@@ -15,7 +15,7 @@
 
       <BaseCard>
         <template #header>
-          <h3 class="text-lg font-semibold">Gestion du compte</h3>
+          <h3 class="text-lg font-semibold">⚙️ Gestion du compte</h3>
         </template>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <form @submit.prevent="handleUpdateUsername" class="flex flex-col">

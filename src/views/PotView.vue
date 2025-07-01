@@ -45,7 +45,7 @@
             </div>
             <div
               class="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-              <span>Objectif: €{{ potSummary.pot.target_amount.toFixed(2) }}</span>
+              <span>Objectif: {{ potSummary.pot.target_amount.toFixed(2).replace('.', ',') }}€</span>
               <span>•</span>
               <span>{{ potSummary.participant_count }} participant{{ potSummary.participant_count !== 1 ? 's' : ''
               }}</span>
@@ -91,9 +91,10 @@
         <BaseCard>
           <div class="space-y-4">
             <div class="flex justify-between items-center">
-              <h3 class="text-lg font-semibold">Avancement</h3>
+              <h3 class="text-lg font-semibold">💰 Avancement</h3>
               <span class="text-lg font-bold text-primary-600">
-                {{ totalContributions.toFixed(2) }}€ / {{ potSummary.pot.target_amount.toFixed(2) }}€
+                {{ totalContributions.toFixed(2).replace('.', ',') }}€ / {{
+                  potSummary.pot.target_amount.toFixed(2).replace('.', ',') }}€
               </span>
             </div>
 
@@ -113,7 +114,7 @@
         <!-- Join Form (if not expired) -->
         <BaseCard v-if="!potSummary.is_expired">
           <template #header>
-            <h3 class="text-lg font-semibold">Participer à cette Kaniot</h3>
+            <h3 class="text-lg font-semibold">🪙 Participer à cette Kaniot</h3>
           </template>
 
           <form @submit.prevent="handleJoin" class="space-y-4">
@@ -134,7 +135,7 @@
         <!-- Participants -->
         <BaseCard v-if="distributedParticipants.length > 0">
           <template #header>
-            <h3 class="text-lg font-semibold">Participants & Répartition</h3>
+            <h3 class="text-lg font-semibold">⚖️ Participants & Répartition</h3>
           </template>
 
           <div class="space-y-3">
@@ -144,8 +145,9 @@
               <div class="flex items-center gap-3">
                 <div>
                   <p class="font-medium">{{ participant.name }}</p>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Max pledge: €{{ participant.max_pledge.toFixed(2)
-                    }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Max pledge: {{ participant.max_pledge.toFixed(2).replace('.', ',') }}€
+                  </p>
                 </div>
 
                 <button v-if="canDeleteParticipant(participant)" @click="handleDeleteParticipant(participant.id)"
@@ -159,7 +161,9 @@
               </div>
 
               <div class="text-right">
-                <p class="font-semibold text-primary-600">€{{ participant.calculated_contribution.toFixed(2) }}</p>
+                <p class="font-semibold text-primary-600">{{ participant.calculated_contribution.toFixed(2).replace('.',
+                  ',')
+                  }}€</p>
                 <p class="text-xs text-gray-500">contribution</p>
               </div>
             </div>
@@ -169,7 +173,7 @@
         <!-- Share -->
         <BaseCard>
           <template #header>
-            <h3 class="text-lg font-semibold">Partager cette Kaniot</h3>
+            <h3 class="text-lg font-semibold">🔗 Partager cette Kaniot</h3>
           </template>
 
           <div class="space-y-4">
@@ -279,7 +283,6 @@ const handleEndPot = async () => {
     const updatedPot = await updatePot(potSummary.value.pot.id, {
       expiration_date: expirationDate,
     });
-    // Mettre à jour l'interface
     potSummary.value.pot = updatedPot;
     potSummary.value.is_expired = true;
     alert('La cagnotte a été terminée.');
@@ -305,7 +308,9 @@ const distributedParticipants = computed(() => {
 })
 
 const totalContributions = computed(() => {
-  return distributedParticipants.value.reduce((sum, p) => sum + p.calculated_contribution, 0)
+  if (!potSummary.value) return 0
+  const sum = distributedParticipants.value.reduce((sum, p) => sum + p.calculated_contribution, 0)
+  return Math.min(sum, potSummary.value.pot.target_amount)
 })
 
 watch(totalContributions, (newValue, oldValue) => {
@@ -435,7 +440,6 @@ const handleJoin = async () => {
     joinLoading.value = false
   }
 }
-
 
 const canDeleteParticipant = (participant: Participant) => {
   if (isOwner.value) {

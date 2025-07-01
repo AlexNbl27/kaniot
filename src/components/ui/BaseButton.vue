@@ -1,13 +1,18 @@
 <template>
-  <button
-    :type="type"
-    :disabled="disabled || loading"
+  <component
+    :is="componentTag"
+    :to="to"
+    :href="href"
+    :type="componentTag === 'button' ? type : undefined"
+    :disabled="componentTag === 'button' ? disabled || loading : undefined"
     :class="buttonClasses"
-    @click="$emit('click', $event)"
+    :aria-disabled="disabled || loading"
+    :role="componentTag !== 'button' && (disabled || loading) ? 'link' : undefined"
+    @click="handleClick"
   >
     <span v-if="loading" class="animate-spin mr-2">⟳</span>
     <slot />
-  </button>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -19,6 +24,8 @@ interface Props {
   type?: 'button' | 'submit'
   disabled?: boolean
   loading?: boolean
+  to?: string | object
+  href?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -27,14 +34,26 @@ const props = withDefaults(defineProps<Props>(), {
   type: 'button',
   disabled: false,
   loading: false,
+  to: undefined,
+  href: undefined,
 })
 
-defineEmits<{
+const emit = defineEmits<{
   click: [event: MouseEvent]
 }>()
 
+const componentTag = computed(() => {
+  if (props.to) {
+    return 'router-link'
+  }
+  if (props.href) {
+    return 'a'
+  }
+  return 'button'
+})
+
 const buttonClasses = computed(() => {
-  const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2'
+  const base = 'inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer'
   
   const variants = {
     primary: 'bg-primary-600 dark:bg-primary-700 text-white hover:bg-primary-700 dark:hover:bg-primary-600 focus:ring-primary-500 disabled:bg-gray-300',
@@ -48,7 +67,18 @@ const buttonClasses = computed(() => {
     md: 'px-4 py-2 text-base',
     lg: 'px-6 py-3 text-lg',
   }
-  
+
+  if (componentTag.value !== 'button' && (props.disabled || props.loading)) {
+    return `${base} ${variants[props.variant]} ${sizes[props.size]} opacity-50 cursor-not-allowed`
+  }
   return `${base} ${variants[props.variant]} ${sizes[props.size]}`
 })
+
+function handleClick(event: MouseEvent) {
+  if (props.disabled || props.loading) {
+    event.preventDefault()
+    return
+  }
+  emit('click', event)
+}
 </script>
