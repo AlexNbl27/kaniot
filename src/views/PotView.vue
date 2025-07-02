@@ -44,12 +44,12 @@
               Kaniot créée par {{ potSummary.pot.creator_name }}
             </div>
             <div
-              class="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              class="flex flex-col sm:flex-row items-center justify-center sm:gap-2 text-sm text-gray-600 dark:text-gray-400">
               <span>Objectif: {{ potSummary.pot.target_amount.toFixed(2).replace('.', ',') }}€</span>
-              <span>•</span>
+              <span class="hidden sm:inline">•</span>
               <span>{{ potSummary.participant_count }} participant{{ potSummary.participant_count !== 1 ? 's' : ''
               }}</span>
-              <span v-if="potSummary.pot.expiration_date">•</span>
+              <span v-if="potSummary.pot.expiration_date" class="hidden sm:inline">•</span>
               <span v-if="potSummary.pot.expiration_date"
                 :class="potSummary.is_expired ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
                 {{ potSummary.is_expired ? `Expirée depuis le ${formatDate(potSummary.pot.expiration_date)}` : `Active
@@ -60,7 +60,6 @@
           </div>
         </BaseCard>
 
-        <!-- Admin -->
         <BaseCard v-if="isOwner && !potSummary.is_expired">
           <template #header>
             <h3 class="text-lg font-semibold">⚙️ Administration</h3>
@@ -75,6 +74,27 @@
               <BaseInput id="admin-target" v-model="adminForm.target_amount" type="number" label="Montant cible (€)"
                 :min="1" required />
             </div>
+
+            <div class="flex items-center justify-between py-2 border-t border-b border-gray-200 dark:border-gray-700">
+              <span class="flex flex-grow flex-col pr-4">
+                <label id="participants-visibility-label" class="font-medium text-sm text-gray-700 dark:text-gray-200">
+                  Cacher la liste des participants
+                </label>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  Les participants ne verront pas les autres contributions.
+                </span>
+              </span>
+              <button type="button" @click="adminForm.hide_participants = !adminForm.hide_participants"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                role="switch" :aria-checked="adminForm.hide_participants"
+                aria-labelledby="participants-visibility-label"
+                :class="adminForm.hide_participants ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'">
+                <span aria-hidden="true"
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  :class="adminForm.hide_participants ? 'translate-x-5' : 'translate-x-0'"></span>
+              </button>
+            </div>
+
             <div class="flex flex-col sm:flex-row gap-4">
               <BaseButton type="submit" :loading="adminLoading">
                 Enregistrer les modifications
@@ -87,11 +107,13 @@
           </form>
         </BaseCard>
 
-        <!-- Progress -->
         <BaseCard>
-          <div class="space-y-4">
-            <div class="flex justify-between items-center">
-              <h3 class="text-lg font-semibold">💰 Avancement</h3>
+          <template #header>
+            <h3 class="text-lg font-semibold">💰 Avancement</h3>
+          </template>
+
+          <div class="space-y-2">
+            <div class="text-left">
               <span class="text-lg font-bold text-primary-600">
                 {{ totalContributions.toFixed(2).replace('.', ',') }}€ / {{
                   potSummary.pot.target_amount.toFixed(2).replace('.', ',') }}€
@@ -110,8 +132,6 @@
             </div>
           </div>
         </BaseCard>
-
-        <!-- Join Form (if not expired) -->
         <BaseCard v-if="!potSummary.is_expired">
           <template #header>
             <h3 class="text-lg font-semibold">🪙 Participer à cette Kaniot</h3>
@@ -132,34 +152,31 @@
           </form>
         </BaseCard>
 
-        <!-- Participants -->
-        <BaseCard v-if="distributedParticipants.length > 0">
+        <BaseCard v-if="visibleParticipants.length > 0">
           <template #header>
             <h3 class="text-lg font-semibold">⚖️ Participants & Répartition</h3>
           </template>
 
           <div class="space-y-3">
-            <div v-for="participant in distributedParticipants" :key="participant.id"
+            <div v-for="participant in visibleParticipants" :key="participant.id"
               class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
 
               <div class="flex items-center gap-3">
-                <div>
-                  <p class="font-medium">{{ participant.name }}</p>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Max pledge: {{ participant.max_pledge.toFixed(2).replace('.', ',') }}€
-                  </p>
-                </div>
-
                 <button v-if="canDeleteParticipant(participant)" @click="handleDeleteParticipant(participant.id)"
-                  title="Remove participant" class="text-gray-400 hover:text-red-600 transition-colors">
+                  title="Remove participant" class="text-gray-400 hover:text-red-600 transition-colors flex-shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                     <path fill-rule="evenodd"
                       d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm4 0a1 1 0 012 0v6a1 1 0 11-2 0V8z"
                       clip-rule="evenodd" />
                   </svg>
                 </button>
+                <div>
+                  <p class="font-medium">{{ participant.name }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    Max pledge: {{ participant.max_pledge.toFixed(2).replace('.', ',') }}€
+                  </p>
+                </div>
               </div>
-
               <div class="text-right">
                 <p class="font-semibold text-primary-600">{{ participant.calculated_contribution.toFixed(2).replace('.',
                   ',')
@@ -170,7 +187,15 @@
           </div>
         </BaseCard>
 
-        <!-- Share -->
+        <BaseCard v-else-if="potSummary && potSummary.pot.hide_participants && !isOwner">
+          <p class="text-center text-gray-600 dark:text-gray-400 italic py-4">
+            Le créateur de cette cagnotte a choisi de cacher la liste des participants.
+            <span v-if="user" class="block mt-1 text-xs">Vous ne verrez que votre propre participation une fois que vous
+              aurez
+              contribué.</span>
+          </p>
+        </BaseCard>
+
         <BaseCard>
           <template #header>
             <h3 class="text-lg font-semibold">🔗 Partager cette Kaniot</h3>
@@ -239,19 +264,17 @@ const adminLoading = ref(false)
 const adminForm = reactive({
   title: '',
   target_amount: 0,
+  hide_participants: false,
 })
 
-// 3. Observez les changements de potSummary pour initialiser le formulaire d'admin
 watch(potSummary, (summary) => {
   if (summary) {
     adminForm.title = summary.pot.title
     adminForm.target_amount = summary.pot.target_amount
+    adminForm.hide_participants = summary.pot.hide_participants
   }
 }, { immediate: true })
 
-// ...
-
-// 4. Ajoutez ces nouvelles fonctions de gestion
 const handleUpdatePot = async () => {
   if (!potSummary.value) return;
   adminLoading.value = true;
@@ -259,9 +282,10 @@ const handleUpdatePot = async () => {
     const updatedPot = await updatePot(potSummary.value.pot.id, {
       title: adminForm.title,
       target_amount: Number(adminForm.target_amount),
+      hide_participants: adminForm.hide_participants, // <-- AJOUTÉ ICI
     });
-    // Mettre à jour l'interface sans recharger la page
-    potSummary.value.pot = updatedPot;
+
+    potSummary.value.pot = { ...potSummary.value.pot, ...updatedPot };
     alert('Cagnotte mise à jour avec succès !');
   } catch (err) {
     console.error('Failed to update pot:', err);
@@ -306,6 +330,29 @@ const distributedParticipants = computed(() => {
   if (!potSummary.value) return []
   return calculateDistribution(potSummary.value.participants, potSummary.value.pot.target_amount)
 })
+
+const visibleParticipants = computed((): Participant[] => {
+  if (!potSummary.value) return [];
+
+  const potIsHidden = potSummary.value.pot.hide_participants;
+  const fullList = distributedParticipants.value;
+  if (isOwner.value) {
+    return fullList;
+  }
+
+  if (!potIsHidden) {
+    return fullList;
+  }
+  if (user.value) {
+    return fullList.filter(p => p.user_id === user.value!.id);
+  } else {
+    const anonymousParticipantId = getAnonymousParticipationId(potSummary.value.pot.id);
+    if (anonymousParticipantId) {
+      return fullList.filter(p => p.id === anonymousParticipantId);
+    }
+  }
+  return [];
+});
 
 const totalContributions = computed(() => {
   if (!potSummary.value) return 0
@@ -425,21 +472,26 @@ const validateJoinForm = () => {
 }
 
 const handleJoin = async () => {
-  if (!validateJoinForm() || !potSummary.value) return
+  if (!validateJoinForm() || !potSummary.value) return;
 
-  joinLoading.value = true
+  joinLoading.value = true;
   try {
-    await joinPot(potSummary.value.pot.id, {
+    const newParticipant = await joinPot(potSummary.value.pot.id, {
       name: joinForm.name.trim(),
       max_pledge: Number(joinForm.max_pledge),
-    })
-    joinForm.max_pledge = ''
+    });
+
+    if (!user.value && newParticipant) {
+      rememberAnonymousParticipation(potSummary.value.pot.id, newParticipant.id);
+    }
+
+    joinForm.max_pledge = '';
   } catch (err) {
-    console.error('Failed to join pot:', err)
+    console.error('Failed to join pot:', err);
   } finally {
-    joinLoading.value = false
+    joinLoading.value = false;
   }
-}
+};
 
 const canDeleteParticipant = (participant: Participant) => {
   if (isOwner.value) {
@@ -457,6 +509,28 @@ const handleDeleteParticipant = async (participantId: string) => {
     await deleteParticipant(participantId)
   } catch (err) {
     console.error('Failed to delete participant:', err)
+  }
+}
+
+const ANONYMOUS_PARTICIPATIONS_KEY = 'kaniot_anon_participations';
+
+function rememberAnonymousParticipation(potId: string, participantId: string) {
+  try {
+    const myParticipations = JSON.parse(localStorage.getItem(ANONYMOUS_PARTICIPATIONS_KEY) || '{}');
+    myParticipations[potId] = participantId;
+    localStorage.setItem(ANONYMOUS_PARTICIPATIONS_KEY, JSON.stringify(myParticipations));
+  } catch (e) {
+    console.error("Could not save anonymous participation to localStorage", e);
+  }
+}
+
+function getAnonymousParticipationId(potId: string): string | null {
+  try {
+    const myParticipations = JSON.parse(localStorage.getItem(ANONYMOUS_PARTICIPATIONS_KEY) || '{}');
+    return myParticipations[potId] || null;
+  } catch (e) {
+    console.error("Could not read anonymous participation from localStorage", e);
+    return null;
   }
 }
 
@@ -478,13 +552,24 @@ const formatDate = (dateString: string) => {
 }
 
 const handlePasswordSubmit = () => {
-  loadPot(enteredPassword.value)
+  if (!enteredPassword.value) {
+    passwordError.value = "Le mot de passe ne peut pas être vide.";
+    return;
+  }
+  sessionStorage.setItem(`pot_password_${shareCode.value}`, enteredPassword.value);
+  loadPot(enteredPassword.value);
 }
 
 onMounted(async () => {
   if (!shareCode.value) {
     loading.value = false;
     error.value = "Aucun code de cagnotte n'a été fourni.";
+    return;
+  }
+
+  const rememberedPassword = sessionStorage.getItem(`pot_password_${shareCode.value}`);
+  if (rememberedPassword) {
+    await loadPot(rememberedPassword);
     return;
   }
 

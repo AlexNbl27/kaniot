@@ -37,6 +37,14 @@
         </div>
       </BaseCard>
 
+      <BaseCard class="mt-6 p-4 bg-gray-50 dark:bg-gray-800">
+        <p class="text-sm text-gray-600 dark:text-gray-400">
+            Il est nécessaire de créer un compte pour créer de nouvelles Kaniots et les partager à vos amis. En vous inscrivant, vous acceptez les 
+            <RouterLink to="/terms-of-use" class="text-primary-600 hover:underline">conditions d'utilisation</RouterLink>.
+        </p>
+      </BaseCard>
+
+
       <div class="mt-6 text-center">
         <BaseButton variant="ghost" @click="$router.push('/')">
           ← Retour à l'accueil

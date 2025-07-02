@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-gray-800 dark:to-gray-900">
     <div class="container mx-auto px-4 py-8 sm:py-16">
-      <div class="text-center mb-12">
-        <img :src="logoSrc" alt="Kaniot"
+      <div class="text-center mb-8">
+        <img :src="logoSrc" alt=""
            class="mx-auto mb-12 h-auto w-full max-w-xs object-contain md-block hidden sm:block" />
         <p class="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto">
           Créez des Kaniots partagées pour les dépenses de groupe, événements et collectes collectives.
@@ -32,13 +32,14 @@
               <div @click="inputRef?.focus()"
                 class="absolute inset-0 w-full h-full flex items-center justify-center gap-2 cursor-text select-none"
                 aria-hidden="true">
+
                 <div v-for="i in 8" :key="i"
                   class="w-10 h-12 border-2 rounded-md flex items-center justify-center text-xl font-bold transition-all duration-200"
                   :class="{
-                    'border-red-500 dark:border-red-400': !!error,
-                    'border-black dark:border-white': isFocused && !error,
+                    'border-red-500 dark:border-red-400 text-red-600 dark:text-red-400': !!error,
+                    'border-primary-500 dark:border-primary-400 ring-2 ring-primary-500/50': isFocused && !error && i === joinCode.length + 1,
+                    'border-gray-500 dark:border-gray-400': isFocused && !error && i <= joinCode.length,
                     'border-gray-300 dark:border-gray-600': !isFocused && !error,
-                    'text-red-600 dark:text-red-400': !!error,
                     'text-gray-900 dark:text-white': !error
                   }">
                   {{ joinCode[i - 1] || '' }}
@@ -142,18 +143,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseCard from '@/components/ui/BaseCard.vue'
-import { useTheme } from '@/composables/useTheme'
-
-const { isDark } = useTheme()
-
-const logoSrc = computed(() => {
-  return isDark.value ? '/logo-white.png' : '/logo.png'
-})
+const logoSrc = '/KANIOT.svg'
 
 const router = useRouter()
 const joinCode = ref('')
@@ -176,7 +171,7 @@ const checkAndRedirect = async (code: string) => {
 
     if (dbError) throw dbError;
     if (data) {
-      router.push(`/pot/${code}`);
+      router.push(`/kaniot/${code}`);
     } else {
       error.value = "Cette cagnotte n'existe pas. Merci de vérifier le code.";
     }

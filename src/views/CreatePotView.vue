@@ -4,7 +4,8 @@
       <div class="max-w-2xl mx-auto">
         <div class="mb-8">
           <h1 class="text-3xl font-bold">Créer votre Kaniot</h1>
-          <p class="text-gray-600 dark:text-gray-400 mt-2">Créez <strong>gratuitement</strong> une nouvelle Kaniot collective avec le
+          <p class="text-gray-600 dark:text-gray-400 mt-2">Créez <strong>gratuitement</strong> une nouvelle Kaniot
+            collective avec le
             montant souhaité et vos préférences de partage.</p>
         </div>
 
@@ -25,6 +26,27 @@
               :error="errors.password" placeholder="Entrez un mot de passe" :minlength="6"
               hint="Si défini, un mot de passe sera requis pour voir et participer à la cagnotte." />
 
+            <div class="flex items-center justify-between py-2">
+              <span class="flex flex-grow flex-col">
+                <label id="participants-visibility-label" class="font-medium text-sm text-gray-700 dark:text-gray-200">
+                  Ne pas afficher la liste des participants
+                </label>
+                <span class="text-sm text-gray-500 dark:text-gray-400">
+                  Si activé, les participants ne verront pas qui a contribué ni le montant de chaque contribution (sauf vous, bien sûr).
+                </span>
+              </span>
+
+              <button type="button" @click="form.hide_participants = !form.hide_participants"
+                class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                role="switch" :aria-checked="form.hide_participants"
+                aria-labelledby="participants-visibility-label"
+                :class="form.hide_participants ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'">
+                <span aria-hidden="true"
+                  class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                  :class="form.hide_participants ? 'translate-x-5' : 'translate-x-0'"></span>
+              </button>
+            </div>
+
             <div class="flex gap-4">
               <BaseButton type="submit" :loading="loading" class="flex-1">
                 Créer la Kaniot
@@ -42,7 +64,8 @@
           </template>
 
           <div class="space-y-4">
-            <p class="text-gray-600 dark:text-gray-400">Votre cagnotte a été créée avec succès. Partagez ce lien avec les
+            <p class="text-gray-600 dark:text-gray-400">Votre cagnotte a été créée avec succès. Partagez ce lien avec
+              les
               participants&nbsp;:
             </p>
 
@@ -58,7 +81,7 @@
             </div>
 
             <div class="flex gap-2">
-              <BaseButton variant="primary" @click="$router.push(`/pot/${createdPot.share_code}`)">
+              <BaseButton variant="primary" @click="$router.push(`/kaniot/${createdPot.share_code}`)">
                 Accéder à la Kaniot
               </BaseButton>
               <BaseButton variant="outline" @click="$router.push('/dashboard')">
@@ -87,6 +110,7 @@ const form = reactive({
   target_amount: '',
   expiration_date: '',
   password: '',
+  hide_participants: false,
 })
 
 const errors = reactive({
@@ -94,6 +118,7 @@ const errors = reactive({
   target_amount: '',
   expiration_date: '',
   password: '',
+  hide_participants: '',
 })
 
 const createdPot = ref<MoneyPot | null>(null)
@@ -101,7 +126,7 @@ const copied = ref(false)
 
 const shareUrl = computed(() => {
   if (!createdPot.value) return ''
-  return `${window.location.origin}/pot/${createdPot.value.share_code}`
+  return `${window.location.origin}/kaniot/${createdPot.value.share_code}`
 })
 
 const validateForm = () => {
@@ -139,6 +164,7 @@ const handleSubmit = async () => {
       target_amount: Number(form.target_amount),
       expiration_date: form.expiration_date || undefined,
       password: form.password || undefined,
+      hide_participants: form.hide_participants,
     })
 
     createdPot.value = pot

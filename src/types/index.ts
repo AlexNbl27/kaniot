@@ -8,6 +8,7 @@ export interface MoneyPot {
   created_by: string;
   creator_name: string;
   share_code: string;
+  hide_participants: boolean;
 }
 
 export interface Participant {
@@ -26,6 +27,7 @@ export interface PotSummary {
   total_pledged: number;
   participant_count: number;
   is_expired: boolean;
+  hide_participants: boolean;
 }
 
 export interface CreatePotData {
@@ -33,6 +35,7 @@ export interface CreatePotData {
   target_amount: number;
   expiration_date?: string;
   password?: string;
+  hide_participants?: boolean;
 }
 
 export interface JoinPotData {

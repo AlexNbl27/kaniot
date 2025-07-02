@@ -28,16 +28,27 @@ const router = createRouter({
       props: true,
     },
     {
+      path: '/kaniot/:shareCode',
+      name: 'PotViewWithKaniot',
+      component: () => import('../views/PotView.vue'),
+      props: true,
+    },
+    {
       path: '/auth',
       name: 'Auth',
       component: () => import('../views/AuthView.vue'),
     },
+    {
+      path: '/terms-of-use',
+      name: 'terms-of-use',
+      component: () => import('../views/TermsOfUse.vue'),
+    }
   ],
 })
 
 router.beforeEach(async (to, _, next) => {
   const { isAuthenticated } = useAuth()
-  
+
   if (to.meta.requiresAuth && !isAuthenticated.value) {
     next('/auth')
   } else {

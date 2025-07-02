@@ -90,7 +90,7 @@
 
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <BaseCard v-for="pot in sortedPots" :key="pot.id" hover class="relative cursor-pointer"
-            @click="$router.push(`/pot/${pot.share_code}`)">
+            @click="$router.push(`/kaniot/${pot.share_code}`)">
             <button @click.stop="handleDeletePot(pot)"
               class="absolute top-3 right-3 p-2 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors duration-200"
               aria-label="Supprimer la cagnotte">
