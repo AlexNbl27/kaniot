@@ -7,7 +7,7 @@
         <div class="flex justify-between items-center h-16">
           <router-link to="/" class="flex items-center gap-2 text-primary-600 hover:opacity-80 transition-opacity"
             @click="isMobileMenuOpen = false">
-            <img :src="logoSrc" alt="Kaniot Logo" class="h-6 w-auto" />
+            <img :src="logoSrc" alt="" class="h-6 w-auto" />
           </router-link>
 
           <nav class="hidden md:flex items-center gap-2">
@@ -145,20 +145,23 @@
       <router-view />
     </main>
 
-    <footer class="bg-gray-800 dark:bg-black text-white py-12">
+    <footer class="bg-gray-800 dark:bg-black text-white py-8">
       <div class="container mx-auto px-4 text-center">
         <p class="text-gray-400">
           © {{ new Date().getFullYear() }} Kaniot. Outil de gestion de cagnottes en ligne fait avec ❤️ par
           <a href="https://github.com/alexnbl27" target="_blank" rel="noopener"
             class="underline hover:text-primary-400">@alexnbl27</a>
         </p>
+        <router-link to="/terms-of-use" class="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+          Terms of Use
+        </router-link>
       </div>
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
@@ -167,10 +170,8 @@ import { useTheme } from '@/composables/useTheme'
 const { isAuthenticated, signOut } = useAuth()
 const router = useRouter()
 const { isDark, toggleTheme } = useTheme()
-const logoSrc = computed(() => {
-  return isDark.value ? '/logo-white.png' : '/logo.png'
-})
 
+const logoSrc = '/KANIOT.svg'
 const isMobileMenuOpen = ref(false)
 
 const toggleMobileMenu = () => {

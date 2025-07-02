@@ -22,6 +22,7 @@ export const useMoneyPots = () => {
         expiration_date: data.expiration_date,
         created_by: user.id,
         share_code: nanoid(8).toUpperCase(),
+        hide_participants: data.hide_participants || false,
       };
 
       if (data.password) {
@@ -45,7 +46,7 @@ export const useMoneyPots = () => {
     }
   }
 
-  const updatePot = async (potId: string, updateData: Partial<{ title: string; target_amount: number; expiration_date: string }>): Promise<MoneyPot> => {
+  const updatePot = async (potId: string, updateData: Partial<{ title: string; target_amount: number; expiration_date: string; hide_participants: boolean }>): Promise<MoneyPot> => {
     loading.value = true;
     error.value = null;
     try {
@@ -126,6 +127,7 @@ export const useMoneyPots = () => {
         total_pledged: totalPledged,
         participant_count: participants.length,
         is_expired: isExpired,
+        hide_participants: pot.hide_participants,
       }
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Failed to fetch pot'
