@@ -48,7 +48,7 @@
               <span>Objectif: {{ potSummary.pot.target_amount.toFixed(2).replace('.', ',') }}€</span>
               <span class="hidden sm:inline">•</span>
               <span>{{ potSummary.participant_count }} participant{{ potSummary.participant_count !== 1 ? 's' : ''
-              }}</span>
+                }}</span>
               <span v-if="potSummary.pot.expiration_date" class="hidden sm:inline">•</span>
               <span v-if="potSummary.pot.expiration_date"
                 :class="potSummary.is_expired ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'">
@@ -78,10 +78,12 @@
             <div class="flex items-center justify-between py-2 border-t border-b border-gray-200 dark:border-gray-700">
               <span class="flex flex-grow flex-col pr-4">
                 <label id="participants-visibility-label" class="font-medium text-sm text-gray-700 dark:text-gray-200">
-                  Cacher la liste des participants
+                  Ne pas afficher la liste des contributions
                 </label>
                 <span class="text-sm text-gray-500 dark:text-gray-400">
-                  Les participants ne verront pas les autres contributions.
+                  Si activé, les participants ne verront pas la valeur des montants promis et des contributions dûes par
+                  les
+                  autres participants de la Kaniot.
                 </span>
               </span>
               <button type="button" @click="adminForm.hide_participants = !adminForm.hide_participants"
@@ -152,13 +154,13 @@
           </form>
         </BaseCard>
 
-        <BaseCard v-if="visibleParticipants.length > 0">
+        <BaseCard v-if="distributedParticipants.length > 0">
           <template #header>
             <h3 class="text-lg font-semibold">⚖️ Participants & Répartition</h3>
           </template>
 
           <div class="space-y-3">
-            <div v-for="participant in visibleParticipants" :key="participant.id"
+            <div v-for="participant in distributedParticipants" :key="participant.id"
               class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
 
               <div class="flex items-center gap-3">
@@ -172,28 +174,27 @@
                 </button>
                 <div>
                   <p class="font-medium">{{ participant.name }}</p>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">
+
+                  <p v-if="!potSummary.pot.hide_participants || shouldDisplayContribution(participant)"
+                    class="text-sm text-gray-600 dark:text-gray-400">
                     Max pledge: {{ participant.max_pledge.toFixed(2).replace('.', ',') }}€
                   </p>
                 </div>
               </div>
+
               <div class="text-right">
-                <p class="font-semibold text-primary-600">{{ participant.calculated_contribution.toFixed(2).replace('.',
-                  ',')
-                  }}€</p>
-                <p class="text-xs text-gray-500">contribution</p>
+                <template v-if="!potSummary.pot.hide_participants || shouldDisplayContribution(participant)">
+                  <p class="font-semibold text-primary-600">{{
+                    participant.calculated_contribution.toFixed(2).replace('.', ',') }}€</p>
+                  <p class="text-xs text-gray-500">contribution</p>
+                </template>
+                <template v-else>
+                  <p class="text-sm italic text-gray-500">Cachée</p>
+                </template>
               </div>
+
             </div>
           </div>
-        </BaseCard>
-
-        <BaseCard v-else-if="potSummary && potSummary.pot.hide_participants && !isOwner">
-          <p class="text-center text-gray-600 dark:text-gray-400 italic py-4">
-            Le créateur de cette cagnotte a choisi de cacher la liste des participants.
-            <span v-if="user" class="block mt-1 text-xs">Vous ne verrez que votre propre participation une fois que vous
-              aurez
-              contribué.</span>
-          </p>
         </BaseCard>
 
         <BaseCard>
@@ -330,29 +331,6 @@ const distributedParticipants = computed(() => {
   if (!potSummary.value) return []
   return calculateDistribution(potSummary.value.participants, potSummary.value.pot.target_amount)
 })
-
-const visibleParticipants = computed((): Participant[] => {
-  if (!potSummary.value) return [];
-
-  const potIsHidden = potSummary.value.pot.hide_participants;
-  const fullList = distributedParticipants.value;
-  if (isOwner.value) {
-    return fullList;
-  }
-
-  if (!potIsHidden) {
-    return fullList;
-  }
-  if (user.value) {
-    return fullList.filter(p => p.user_id === user.value!.id);
-  } else {
-    const anonymousParticipantId = getAnonymousParticipationId(potSummary.value.pot.id);
-    if (anonymousParticipantId) {
-      return fullList.filter(p => p.id === anonymousParticipantId);
-    }
-  }
-  return [];
-});
 
 const totalContributions = computed(() => {
   if (!potSummary.value) return 0
@@ -503,6 +481,32 @@ const canDeleteParticipant = (participant: Participant) => {
   return false;
 };
 
+const shouldDisplayContribution = (participant: Participant) => {
+  if (isOwner.value) {
+    return true;
+  }
+  if (user.value && user.value.id === participant.user_id) {
+    return true;
+  }
+  if (!user.value && potSummary.value) {
+    const anonymousParticipantId = getAnonymousParticipationId(potSummary.value.pot.id);
+    if (anonymousParticipantId && participant.id === anonymousParticipantId) {
+      return true;
+    }
+  }
+  return false;
+};
+
+function getAnonymousParticipationId(potId: string): string | null {
+  try {
+    const myParticipations = JSON.parse(localStorage.getItem(ANONYMOUS_PARTICIPATIONS_KEY) || '{}');
+    return myParticipations[potId] || null;
+  } catch (e) {
+    console.error("Could not read anonymous participation from localStorage", e);
+    return null;
+  }
+}
+
 const handleDeleteParticipant = async (participantId: string) => {
   if (!confirm('Are you sure you want to remove this participant?')) return
   try {
@@ -521,16 +525,6 @@ function rememberAnonymousParticipation(potId: string, participantId: string) {
     localStorage.setItem(ANONYMOUS_PARTICIPATIONS_KEY, JSON.stringify(myParticipations));
   } catch (e) {
     console.error("Could not save anonymous participation to localStorage", e);
-  }
-}
-
-function getAnonymousParticipationId(potId: string): string | null {
-  try {
-    const myParticipations = JSON.parse(localStorage.getItem(ANONYMOUS_PARTICIPATIONS_KEY) || '{}');
-    return myParticipations[potId] || null;
-  } catch (e) {
-    console.error("Could not read anonymous participation from localStorage", e);
-    return null;
   }
 }
 
