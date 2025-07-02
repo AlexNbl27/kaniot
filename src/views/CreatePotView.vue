@@ -29,17 +29,17 @@
             <div class="flex items-center justify-between py-2">
               <span class="flex flex-grow flex-col">
                 <label id="participants-visibility-label" class="font-medium text-sm text-gray-700 dark:text-gray-200">
-                  Ne pas afficher la liste des participants
+                  Ne pas afficher la liste des contributions
                 </label>
                 <span class="text-sm text-gray-500 dark:text-gray-400">
-                  Si activé, les participants ne verront pas qui a contribué ni le montant de chaque contribution (sauf vous, bien sûr).
+                  Si activé, les participants ne verront pas la valeur des montants promis et des contributions dûes par
+                  les autres participants de la Kaniot.
                 </span>
               </span>
 
               <button type="button" @click="form.hide_participants = !form.hide_participants"
                 class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-                role="switch" :aria-checked="form.hide_participants"
-                aria-labelledby="participants-visibility-label"
+                role="switch" :aria-checked="form.hide_participants" aria-labelledby="participants-visibility-label"
                 :class="form.hide_participants ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'">
                 <span aria-hidden="true"
                   class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
