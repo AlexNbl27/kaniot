@@ -1,4 +1,5 @@
 <template>
+  <Analytics />
   <div
     class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-200 flex flex-col transition-colors duration-300">
     <header
@@ -166,6 +167,7 @@ import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import { useTheme } from '@/composables/useTheme'
+import { Analytics } from '@vercel/analytics/vue';
 
 const { isAuthenticated, signOut } = useAuth()
 const router = useRouter()
